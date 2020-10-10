@@ -385,7 +385,7 @@ def preprocess_lstm(problems, hold_positions):
 
     x_test = np.stack(np.array(test['moves']), axis=0)
     y_test = np.array(ordinal_encode(test['grade']))
-
+    
     return x_train, y_train, x_val, y_val, x_test, y_test
 
 
