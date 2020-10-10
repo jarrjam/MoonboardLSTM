@@ -1,6 +1,9 @@
 from . import constants
 import numpy as np
+import pandas as pd
 import math
+from sklearn.model_selection import train_test_split
+from sklearn.utils import resample
 
 
 def convert_hold_orientation_to_angle(hold_pos):
@@ -272,6 +275,67 @@ def generate_betas(problems):
     return betas
 
 
+def scale_values(dataset):
+    for i, problem in enumerate(dataset):
+        for j, move in enumerate(problem[1]):
+            # new_move = [move[0] / max_moves, move[1], move[2]]
+            scaled_move = [move[0] / constants.max_moves,
+                           move[1], move[2], move[3]]
+            dataset[i][1][j] = scaled_move
+
+    return dataset
+
+
+# Adds padding to move sequences so that all move sequence arrays are always of length 16
+def pad_dataset(dataset):
+    for i, problem in enumerate(dataset):
+        if len(problem[1]) < constants.max_moves:
+            padding = np.zeros((constants.max_moves - len(problem[1]), 4))
+            dataset[i][1] = np.concatenate((padding, problem[1]), axis=0)
+
+    return dataset
+
+
+# Provides ordinal encoding for labels
+def ordinal_encode(grades):
+    encoded = []
+
+    for grade in grades:
+        num_ones = grade - 4
+        encoded_grade = [0 for i in range(10)]
+
+        for i in range(num_ones):
+            encoded_grade[i] = 1
+
+        encoded.append(encoded_grade)
+
+    return encoded
+
+
+def reverse_ordinal_encoding(grades):
+    return [4 + np.sum(grade) for grade in grades]
+
+
+def upsample_dataset(dataset, num_samples_per_grade):
+    # Stores arrays of upsampled cases, with an array for each climbing grade
+    upsampled_classes = []
+
+    # Range represents the range of possible grades
+    for i in range(4, 15):
+        df_class = dataset[dataset.grade == i]
+
+        upsampled_classes.append(resample(df_class, replace=len(df_class) < num_samples_per_grade,
+                                          n_samples=num_samples_per_grade, random_state=10))
+
+    dataset_upsampled = upsampled_classes[0]
+
+    for i in range(1, len(upsampled_classes)):
+        dataset_upsampled = pd.concat(
+            [dataset_upsampled, upsampled_classes[i]], axis=0)
+
+    return dataset_upsampled
+
+
 # Preprocessing steps for LSTM approach
 def preprocess_lstm(problems, hold_positions):
     problems = convert_grades(problems)
@@ -303,7 +367,26 @@ def preprocess_lstm(problems, hold_positions):
             processed_problem.append(problems[key]['grade'])
             dataset.append(processed_problem)
 
-    return dataset
+    dataset_scaled = scale_values(dataset)
+    dataset_padded = pad_dataset(dataset_scaled)
+    dataset_pd = pd.DataFrame(dataset_padded, columns=['id', 'moves', 'grade'])
+
+    train, test = train_test_split(
+        dataset_pd, test_size=0.2, random_state=10)
+    train, val = train_test_split(train, test_size=0.25, random_state=10)
+
+    train_upsampled = upsample_dataset(train, num_samples_per_grade=3000)
+
+    x_train = np.stack(np.array(train_upsampled['moves']), axis=0)
+    y_train = np.array(ordinal_encode(train_upsampled['grade']))
+
+    x_val = np.stack(np.array(val['moves']), axis=0)
+    y_val = np.array(ordinal_encode(val['grade']))
+
+    x_test = np.stack(np.array(test['moves']), axis=0)
+    y_test = np.array(ordinal_encode(test['grade']))
+
+    return x_train, y_train, x_val, y_val, x_test, y_test
 
 
 def preprocess(problems, hold_positions, model_type):
