@@ -7,4 +7,3 @@ with open('data/hold_positions.json')as hold_file, open('data/moonboard_problems
     problems = json.load(problems_file)
 
 run_lstm(*preprocess(problems, hold_positions, 'lstm'))
-    
