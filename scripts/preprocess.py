@@ -5,6 +5,8 @@ import math
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
+# TODO: Turn more pieces of code into functions to make it more readable
+
 
 def convert_hold_orientation_to_angle(hold_pos):
     new_hold_pos = {}
@@ -108,13 +110,12 @@ def calculate_hold_difficulty(problems):
 
     return hold_avg_grade
 
+
 # TODO: More efficient distance algorithm???
 # Function which calculates movements to closest holds
 # Move distances and angles are calculated by looking at the coords of the 2nd most recent move.
 # This is done to be more reminiscent of actual climbing, by having one hand at a time move and with each hand moving
 # one after the other (so every 2nd move).
-
-
 def move_to_closest_holds(holds, beta):
     # In order to simplify things, we only move to a hold once
     used_hold_dict = {}
@@ -332,6 +333,26 @@ def upsample_dataset(dataset, num_samples_per_grade):
     return dataset_upsampled
 
 
+def upsample_and_split(dataset, x_col_name):
+    train, test = train_test_split(
+        dataset, test_size=0.2, random_state=10)
+    train, val = train_test_split(train, test_size=0.25, random_state=10)
+
+    train_upsampled = upsample_dataset(train, num_samples_per_grade=3000)
+
+    x_train = np.stack(np.array(train_upsampled[x_col_name]), axis=0)
+    y_train = np.array(ordinal_encode(train_upsampled['grade']))
+
+    x_val = np.stack(np.array(val[x_col_name]), axis=0)
+    y_val = np.array(ordinal_encode(val['grade']))
+
+    x_test = np.stack(np.array(test[x_col_name]), axis=0)
+
+    # Don't ordinal encode y_test labels, otherwise they won't work properly with evaluation metrics
+    y_test = test['grade']
+
+    return x_train, y_train, x_val, y_val, x_test, y_test
+
 # Preprocessing steps for LSTM approach
 def preprocess_lstm(problems, hold_positions):
     problems = convert_grades(problems)
@@ -367,24 +388,44 @@ def preprocess_lstm(problems, hold_positions):
     dataset_padded = pad_dataset(dataset_scaled)
     dataset_pd = pd.DataFrame(dataset_padded, columns=['id', 'moves', 'grade'])
 
-    train, test = train_test_split(
-        dataset_pd, test_size=0.2, random_state=10)
-    train, val = train_test_split(train, test_size=0.25, random_state=10)
+    return upsample_and_split(dataset_pd, x_col_name='moves')
 
-    train_upsampled = upsample_dataset(train, num_samples_per_grade=3000)
 
-    x_train = np.stack(np.array(train_upsampled['moves']), axis=0)
-    y_train = np.array(ordinal_encode(train_upsampled['grade']))
+# Returns a boolean hold map where a hold that is being used in a Moonboard problem is marked by a 1
+def problems_to_hold_map(problems):
+  hold_map = []
 
-    x_val = np.stack(np.array(val['moves']), axis=0)
-    y_val = np.array(ordinal_encode(val['grade']))
+  for key in problems:
+    curr_map = [[0 for i in range(11)] for i in range(18)]
 
-    x_test = np.stack(np.array(test['moves']), axis=0)
+    for section in ['start', 'mid', 'end']:
+      for hold in problems[key][section]:
+        curr_map[hold[1]][hold[0]] = 1
 
-    # Don't ordinal encode y_test labels, otherwise they won't work properly with evaluation metrics
-    y_test = test['grade']
-    
-    return x_train, y_train, x_val, y_val, x_test, y_test
+    hold_map.append(curr_map)
+
+  return hold_map
+
+
+# Returns an array of grades in the V-scale for each Moonboard problem
+def get_grades(problems):
+  grades = []
+
+  for key in problems:
+    int_grade = problems[key]['grade']
+    grades.append(constants.grade_map[int_grade]['v_scale'])
+
+  return grades
+
+
+def preprocess_cnn(problems):
+    hold_map = problems_to_hold_map(problems)
+    problem_ids = [key for key in problems]
+    grades = get_grades(problems)
+
+    problem_dict = {'ids': problem_ids, 'hold_map': hold_map, 'grade': grades}
+    dataset = pd.DataFrame(problem_dict)
+    return upsample_and_split(dataset, x_col_name='hold_map')
 
 
 def preprocess(problems, hold_positions, model_type):
