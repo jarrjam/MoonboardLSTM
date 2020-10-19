@@ -1,6 +1,8 @@
 # Max number of moves for a generated beta/move sequence
 max_moves = 16
 
+wandb_is_active = False
+
 # Mappings for each of the grading systems
 grade_map = {
     2: {'font_scale': '6B', 'v_scale': 4},

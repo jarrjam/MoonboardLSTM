@@ -312,10 +312,6 @@ def ordinal_encode(grades):
     return encoded
 
 
-def reverse_ordinal_encoding(grades):
-    return [4 + np.sum(grade) for grade in grades]
-
-
 def upsample_dataset(dataset, num_samples_per_grade):
     # Stores arrays of upsampled cases, with an array for each climbing grade
     upsampled_classes = []
@@ -384,7 +380,9 @@ def preprocess_lstm(problems, hold_positions):
     y_val = np.array(ordinal_encode(val['grade']))
 
     x_test = np.stack(np.array(test['moves']), axis=0)
-    y_test = np.array(ordinal_encode(test['grade']))
+
+    # Don't ordinal encode y_test labels, otherwise they won't work properly with evaluation metrics
+    y_test = test['grade']
     
     return x_train, y_train, x_val, y_val, x_test, y_test
 
