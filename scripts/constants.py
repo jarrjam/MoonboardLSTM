@@ -1,7 +1,10 @@
 # Max number of moves for a generated beta/move sequence
 max_moves = 16
 
-wandb_is_active = False
+# None: no WandB logging
+# CNN: CNN logging
+# LSTM: LSTM logging
+wandb_mode = "CNN"
 
 # Mappings for each of the grading systems
 grade_map = {
@@ -20,3 +23,10 @@ grade_map = {
     14: {'font_scale': '8B', 'v_scale': 13},
     15: {'font_scale': '8B+', 'v_scale': 14}
 }
+
+hyperparameters_lstm = dict(
+    epochs = 183,
+    batch_size = 16,
+    nodes_1 = 46,
+    nodes_2 = 20,
+)
