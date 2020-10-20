@@ -5,7 +5,7 @@ import random
 from . import constants
 from numpy.random import seed
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
+from keras.layers import Dense, LSTM, Conv2D, Flatten, Input, concatenate
 import tensorflow as tf
 from tensorflow.random import set_seed
 import wandb
@@ -73,6 +73,33 @@ def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
     # print(pred)
     # print(y_test)
+    print("F1:", f1_score(np.array(y_test), pred, average='weighted'))
+    print("Accuracy:", accuracy_score(np.array(y_test), pred))
+    print("MSE:", mean_squared_error(y_test, pred))
+    print("MAE:", mean_absolute_error(y_test, pred))
+    print(classification_report(np.array(y_test), pred))
+
+
+
+def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
+    reset_seed()
+    
+    inputs = Input(shape=(18,11,1))
+    conv1 = Conv2D(filters=4, strides=1, kernel_size=(11, 7))(inputs)
+    conv2 = Conv2D(filters=1, kernel_size=1)(inputs)
+    flat1 = Flatten()(conv1)
+    flat2 = Flatten()(conv2)
+    combine = concatenate([flat1, flat2])
+    dense1 = Dense(5, activation='sigmoid')(combine)
+    dense2 = Dense(50, activation='sigmoid')(dense1)
+    outputs = Dense(10, activation='sigmoid')(dense2)
+
+    model = keras.Model(inputs, outputs)
+    model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+
+    history = model.fit(x_train, y_train, epochs=40, batch_size=64, validation_data=(x_val, y_val), verbose=1)
+
+    pred = convert_ordinal_prob_to_grade(model.predict(x_test))
     print("F1:", f1_score(np.array(y_test), pred, average='weighted'))
     print("Accuracy:", accuracy_score(np.array(y_test), pred))
     print("MSE:", mean_squared_error(y_test, pred))
