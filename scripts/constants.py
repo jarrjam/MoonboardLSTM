@@ -4,7 +4,7 @@ max_moves = 16
 # None: no WandB logging
 # CNN: CNN logging
 # LSTM: LSTM logging
-wandb_mode = "CNN"
+wandb_mode = None
 
 # Mappings for each of the grading systems
 grade_map = {
