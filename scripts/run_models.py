@@ -70,6 +70,7 @@ def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
     print("Accuracy:", accuracy_score(np.array(y_test), pred))
     print("MSE:", mean_squared_error(y_test, pred))
     print("MAE:", mean_absolute_error(y_test, pred))
+    print("Macro MSE:", metrics.macro_mse(y_test, pred))
     print(classification_report(np.array(y_test), pred))
 
 
