@@ -72,6 +72,7 @@ def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
     print("MAE:", mean_absolute_error(y_test, pred))
     print("Macro MSE:", metrics.macro_mse(y_test, pred))
     print(classification_report(np.array(y_test), pred))
+    print(metrics.ordinal_evaluation_report(y_test, pred))
 
 
 def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
@@ -79,7 +80,7 @@ def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
         callbacks = [WandbCallback()]
     else:
         callbacks = []
-    
+
     reset_seed()
 
     inputs = Input(shape=(18, 11, 1))
@@ -106,3 +107,4 @@ def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
     print("MAE:", mean_absolute_error(y_test, pred))
     print("Macro MSE:", metrics.macro_mse(y_test, pred))
     print(classification_report(np.array(y_test), pred))
+    print(metrics.ordinal_evaluation_report(y_test, pred))
