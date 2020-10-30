@@ -1,4 +1,7 @@
 scripts/__pycache__/*
+data/save*
 __pycache__/*
 .vscode/*
 wandb/*
+debug.log
+*.ipynb
