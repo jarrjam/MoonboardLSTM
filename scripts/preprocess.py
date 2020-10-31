@@ -426,10 +426,3 @@ def preprocess_cnn(problems):
     problem_dict = {'ids': problem_ids, 'hold_map': hold_map, 'grade': grades}
     dataset = pd.DataFrame(problem_dict)
     return upsample_and_split(dataset, x_col_name='hold_map')
-
-
-def preprocess(problems, hold_positions, model_type):
-    if model_type == "lstm":
-        return preprocess_lstm(problems, hold_positions)
-
-    return None

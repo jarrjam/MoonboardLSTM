@@ -6,5 +6,5 @@ with open('data/hold_positions.json')as hold_file, open('data/moonboard_problems
     hold_positions = json.load(hold_file)
     problems = json.load(problems_file)
 
-run_lstm(*preprocess(problems, hold_positions, 'lstm'))
+run_lstm(*preprocess_lstm(problems, hold_positions))
 # run_cnn(*preprocess_cnn(problems))
