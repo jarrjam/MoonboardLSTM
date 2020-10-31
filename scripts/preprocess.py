@@ -5,8 +5,6 @@ import math
 from sklearn.model_selection import train_test_split
 from sklearn.utils import resample
 
-# TODO: Turn more pieces of code into functions to make it more readable
-
 
 def convert_hold_orientation_to_angle(hold_pos):
     new_hold_pos = {}
@@ -34,8 +32,6 @@ def convert_hold_orientation_to_angle(hold_pos):
             orientation = 7/8
         elif hold_pos[key]['orientation'] == "N":
             orientation = 0
-        else:
-            raise Exception(hold_pos[key]['orientation'])
 
         new_hold_pos[i + "-" + j] = orientation
 
@@ -184,7 +180,6 @@ def move_to_closest_holds(holds, beta):
     return beta
 
 
-# TODO: Potentially combine this with other move function
 # Modified version of move function that is used when you need to get both hands on final hold
 def move_to_match_on_final_hold(coords, beta):
     for i in range(2):
@@ -353,22 +348,21 @@ def upsample_and_split(dataset, x_col_name):
 
     return x_train, y_train, x_val, y_val, x_test, y_test
 
-# Preprocessing steps for LSTM approach
-def preprocess_lstm(problems, hold_positions):
-    log.log_output("LSTM", "Begin preprocessing for LSTM")
-    problems = convert_grades(problems)
-    hold_avg_grade = calculate_hold_difficulty(problems)
-    betas = generate_betas(problems)
-    hold_positions = convert_hold_orientation_to_angle(hold_positions)
 
+# Uses problems, generated betas for each problem, and hold information to create a dataset that can be passed into the LSTM
+# Each problem is represented by an array in the following format [problem ID, beta, grade]
+def create_lstm_dataset(problems, betas, hold_avg_grade, hold_positions):
     dataset = []
 
-    for key in problems:
-        if key in betas:
+    for problem_id in problems:
+        if problem_id in betas:
             processed_problem = []
-            processed_problem.append(key)
+            processed_problem.append(problem_id)
 
-            beta = betas[key]
+            beta = betas[problem_id]
+
+            # Represents a beta as an array of moves with the following information for each move:
+            # [hold difficulty, distance to move to hold, orientation of hold, the angle of the move direction]
             processed_beta = []
 
             for i, move in enumerate(beta):
@@ -376,18 +370,32 @@ def preprocess_lstm(problems, hold_positions):
                 distance = beta[i][1]
                 orientation = hold_positions[beta[i][0]]
                 move_angle = beta[i][2]
-                # processed_beta.append([i+1, hold_diff, distance])
-                # processed_beta.append([hold_diff, distance, orientation])
                 processed_beta.append(
                     [hold_diff, distance, orientation, move_angle])
 
             processed_problem.append(processed_beta)
-            processed_problem.append(problems[key]['grade'])
+            processed_problem.append(problems[problem_id]['grade'])
             dataset.append(processed_problem)
 
+    return dataset
+
+
+# Preprocessing steps for LSTM approach
+def preprocess_lstm(problems, hold_positions):
+    log.log_output("LSTM", "Begin preprocessing for LSTM")
+
+    problems = convert_grades(problems)
+    betas = generate_betas(problems)
+
+    hold_avg_grade = calculate_hold_difficulty(problems)
+    hold_positions = convert_hold_orientation_to_angle(hold_positions)
+
+    dataset = create_lstm_dataset(
+        problems, betas, hold_avg_grade, hold_positions)
     dataset_scaled = scale_values(dataset)
     dataset_padded = pad_dataset(dataset_scaled)
     dataset_pd = pd.DataFrame(dataset_padded, columns=['id', 'moves', 'grade'])
+
     log.log_output("LSTM", "Completed preprocessing for LSTM")
 
     return upsample_and_split(dataset_pd, x_col_name='moves')
@@ -395,29 +403,29 @@ def preprocess_lstm(problems, hold_positions):
 
 # Returns a boolean hold map where a hold that is being used in a Moonboard problem is marked by a 1
 def problems_to_hold_map(problems):
-  hold_map = []
+    hold_map = []
 
-  for key in problems:
-    curr_map = [[0 for i in range(11)] for i in range(18)]
+    for key in problems:
+        curr_map = [[0 for i in range(11)] for i in range(18)]
 
-    for section in ['start', 'mid', 'end']:
-      for hold in problems[key][section]:
-        curr_map[hold[1]][hold[0]] = 1
+        for section in ['start', 'mid', 'end']:
+            for hold in problems[key][section]:
+                curr_map[hold[1]][hold[0]] = 1
 
-    hold_map.append(curr_map)
+        hold_map.append(curr_map)
 
-  return hold_map
+    return hold_map
 
 
 # Returns an array of grades in the V-scale for each Moonboard problem
 def get_grades(problems):
-  grades = []
+    grades = []
 
-  for key in problems:
-    int_grade = problems[key]['grade']
-    grades.append(constants.grade_map[int_grade]['v_scale'])
+    for key in problems:
+        int_grade = problems[key]['grade']
+        grades.append(constants.grade_map[int_grade]['v_scale'])
 
-  return grades
+    return grades
 
 
 def preprocess_cnn(problems):
