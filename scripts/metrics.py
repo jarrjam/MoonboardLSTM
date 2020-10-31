@@ -72,7 +72,7 @@ def ordinal_evaluation_report(y_true, y_pred, labels=None):
                 subset_mse += mse
                 subset_mae += mae
 
-    headers = ['Class', 'MSE', 'MAE', 'Support']
+    headers = ['Grade', 'MSE', 'MAE', 'Support']
     data = [headers] + \
         list(zip(labels, ["{0:.5g}".format(class_scores[label]['mse'])
                           for label in labels], ["{0:.5g}".format(class_scores[label]['mae'])

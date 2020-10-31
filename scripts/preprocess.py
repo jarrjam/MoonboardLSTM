@@ -46,6 +46,7 @@ def coord_to_key(coord):
 # Converts dict key back to hold coordinate form
 def key_to_coord(key):
     split = key.split('-')
+    
     return (int(split[1]), int(split[0]))
 
 
@@ -437,4 +438,5 @@ def preprocess_cnn(problems):
     problem_dict = {'ids': problem_ids, 'hold_map': hold_map, 'grade': grades}
     dataset = pd.DataFrame(problem_dict)
     log.log_output("CNN", "Completed preprocessing for CNN")
+
     return upsample_and_split(dataset, x_col_name='hold_map')
