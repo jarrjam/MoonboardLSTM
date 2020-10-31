@@ -2,22 +2,24 @@ import os
 import numpy as np
 import keras
 import random
-from . import constants, metrics
+from . import constants, metrics, log
 from numpy.random import seed
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Conv2D, Flatten, Input, concatenate
 import tensorflow as tf
 from tensorflow.random import set_seed
-import wandb
-from wandb.keras import WandbCallback
 from sklearn.metrics import f1_score, accuracy_score, classification_report, mean_squared_error, mean_absolute_error
+
+if constants.wandb_mode != None:
+    import wandb
+    from wandb.keras import WandbCallback
 
 if constants.wandb_mode == "LSTM":
     wandb.init(config=constants.hyperparameters_lstm,
-               project="moonboard_rnn", group="LSTM_original", entity="jarrjam")
+               project="moonboard_rnn", group="LSTM_original")
     config = wandb.config
 elif constants.wandb_mode == "CNN":
-    wandb.init(project="moonboard_rnn", group="CNN", entity="jarrjam")
+    wandb.init(project="moonboard_rnn", group="CNN")
 
 
 # Used to make experiments as reproduceable as possible
@@ -48,31 +50,24 @@ def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
         callbacks = []
 
     reset_seed()
-    model = Sequential()
 
+    model = Sequential()
     model.add(LSTM(hyperparameters['nodes_2'], input_shape=(
         x_train.shape[1], x_train.shape[2]), return_sequences=True))
     model.add(LSTM(hyperparameters['nodes_1']))
-
     model.add(Dense(10, activation='sigmoid'))
-
     model.compile(loss='mse', optimizer='adam', metrics=['mae'])
+
+    log.log_output("LSTM", "Begin LSTM Training")
 
     history = model.fit(x_train, y_train, epochs=hyperparameters['epochs'], batch_size=hyperparameters['batch_size'], validation_data=(
         x_val, y_val), verbose=1, callbacks=callbacks)
 
-    # if constants.wandb_mode == "LSTM":
-    #     model.save(os.path.join(wandb.run.dir, "model.h5"))
+    log.log_output("LSTM", "Completed LSTM Training")
 
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
 
-    print("F1:", f1_score(np.array(y_test), pred, average='weighted'))
-    print("Accuracy:", accuracy_score(np.array(y_test), pred))
-    print("MSE:", mean_squared_error(y_test, pred))
-    print("MAE:", mean_absolute_error(y_test, pred))
-    print("Macro MSE:", metrics.macro_mse(y_test, pred))
-    print(classification_report(np.array(y_test), pred))
-    print(metrics.ordinal_evaluation_report(y_test, pred))
+    log.log_output("LSTM", "Scores for LSTM on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))
 
 
 def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
@@ -96,15 +91,13 @@ def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
     model = keras.Model(inputs, outputs)
     model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
+    log.log_output("CNN", "Begin CNN Training")
+
     history = model.fit(x_train, y_train, epochs=40, batch_size=64,
                         validation_data=(x_val, y_val), verbose=1, callbacks=callbacks)
 
+    log.log_output("CNN", "Completed CNN Training")
+
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
 
-    print("F1:", f1_score(np.array(y_test), pred, average='weighted'))
-    print("Accuracy:", accuracy_score(np.array(y_test), pred))
-    print("MSE:", mean_squared_error(y_test, pred))
-    print("MAE:", mean_absolute_error(y_test, pred))
-    print("Macro MSE:", metrics.macro_mse(y_test, pred))
-    print(classification_report(np.array(y_test), pred))
-    print(metrics.ordinal_evaluation_report(y_test, pred))
+    log.log_output("CNN", "Scores for CNN on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))

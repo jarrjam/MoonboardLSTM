@@ -5,3 +5,4 @@ __pycache__/*
 wandb/*
 debug.log
 *.ipynb
+output.log
