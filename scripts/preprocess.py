@@ -46,7 +46,7 @@ def coord_to_key(coord):
 # Converts dict key back to hold coordinate form
 def key_to_coord(key):
     split = key.split('-')
-    
+
     return (int(split[1]), int(split[0]))
 
 
@@ -317,7 +317,7 @@ def upsample_dataset(dataset, num_samples_per_grade):
     for i in range(4, 15):
         df_class = dataset[dataset.grade == i]
 
-        upsampled_classes.append(resample(df_class, replace=len(df_class) < num_samples_per_grade,
+        upsampled_classes.append(resample(df_class, replace=True,
                                           n_samples=num_samples_per_grade, random_state=10))
 
     dataset_upsampled = upsampled_classes[0]
@@ -334,7 +334,9 @@ def upsample_and_split(dataset, x_col_name):
         dataset, test_size=0.2, random_state=10)
     train, val = train_test_split(train, test_size=0.25, random_state=10)
 
-    train_upsampled = upsample_dataset(train, num_samples_per_grade=3000)
+    max_grade_frequency = train['grade'].value_counts().max()
+    train_upsampled = upsample_dataset(
+        train, num_samples_per_grade=max_grade_frequency)
 
     x_train = np.stack(np.array(train_upsampled[x_col_name]), axis=0)
     y_train = np.array(ordinal_encode(train_upsampled['grade']))
