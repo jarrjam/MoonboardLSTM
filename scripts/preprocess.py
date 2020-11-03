@@ -81,7 +81,7 @@ def calculate_hold_difficulty(problems):
         # Threshold is set to be the median frequency for that hold
         threshold = np.sum(hold_freq[hold]) / 2
 
-        # TODO: Comment properly
+        # TODO: Comment this section properly
         curr_sum = 0.0
         for i, freq in enumerate(hold_freq[hold]):
             curr_sum += freq
@@ -94,7 +94,6 @@ def calculate_hold_difficulty(problems):
     return hold_avg_grade
 
 
-# TODO: More efficient distance algorithm???
 # Function which calculates movements to closest holds
 # Move distances and angles are calculated by looking at the coords of the 2nd most recent move.
 # This is done to be more reminiscent of actual climbing, by having one hand at a time move and with each hand moving
@@ -122,7 +121,6 @@ def move_to_closest_holds(holds, beta):
             coords = holds[i]
 
             if coords not in used_hold_dict:
-                # TODO: Test without horizontal weighting
                 # Horizontal distance is weighted less than vertical distance as it is usually much easier to move horizontally
                 weighted_distance = math.sqrt(
                     pow(0.7 * (coords[0] - last_coord_2[0]), 2) + pow(coords[1] - last_coord_2[1], 2))
@@ -214,44 +212,43 @@ def generate_betas(problems):
         problem = problems[key]
         beta = []
 
-        # TODO: Evaluate if the order of the start holds matter
-        if len(problem['start']) > 0:
-            # Generate start moves
-            if len(problem['start']) == 2:
-                # Non-match start - means that both your hands start on different holds for the first move
-                if problem['start'][1] == problem['start'][1][1]:
-                    # If both holds are on the same row, then we will first append the left-most hold
-                    if problem['start'][0][0] < problem['start'][1][0]:
-                        beta.append((problem['start'][0], 0, 0))
-                        beta.append((problem['start'][1], 0, 0))
-                    else:
-                        beta.append((problem['start'][1], 0, 0))
-                        beta.append((problem['start'][0], 0, 0))
-                # Otherwise, append the lowest hold first
-                elif problem['start'][0][1] < problem['start'][1][1]:
+        # if len(problem['start']) > 0:
+        # Generate start moves
+        if len(problem['start']) == 2:
+            # Non-match start - means that both your hands start on different holds for the first move
+            if problem['start'][1] == problem['start'][1][1]:
+                # If both holds are on the same row, then we will first append the left-most hold
+                if problem['start'][0][0] < problem['start'][1][0]:
                     beta.append((problem['start'][0], 0, 0))
                     beta.append((problem['start'][1], 0, 0))
                 else:
                     beta.append((problem['start'][1], 0, 0))
                     beta.append((problem['start'][0], 0, 0))
-            else:
-                # Match start hold - means that both hands are on the same start hold
+            # Otherwise, append the lowest hold first
+            elif problem['start'][0][1] < problem['start'][1][1]:
                 beta.append((problem['start'][0], 0, 0))
-                beta.append((problem['start'][0], 0, 0))
-
-            # Generate mid section moves
-            beta = move_to_closest_holds(problem['mid'], beta)
-
-            # Generate end moves
-            # If there are two end holds, then beta can be calculated normally since there is no violation of the
-            # 'move to a hold once' rule
-            if len(problem['end']) == 2:
-                beta = move_to_closest_holds(problem['end'], beta)
-            # Otherwise we will need to calculate moves differently since we would need to move both hands to the same hold
+                beta.append((problem['start'][1], 0, 0))
             else:
-                beta = move_to_match_on_final_hold(problem['end'][0], beta)
+                beta.append((problem['start'][1], 0, 0))
+                beta.append((problem['start'][0], 0, 0))
+        else:
+            # Match start hold - means that both hands are on the same start hold
+            beta.append((problem['start'][0], 0, 0))
+            beta.append((problem['start'][0], 0, 0))
 
-            betas[key] = beta
+        # Generate mid section moves
+        beta = move_to_closest_holds(problem['mid'], beta)
+
+        # Generate end moves
+        # If there are two end holds, then beta can be calculated normally since there is no violation of the
+        # 'move to a hold once' rule
+        if len(problem['end']) == 2:
+            beta = move_to_closest_holds(problem['end'], beta)
+        # Otherwise we will need to calculate moves differently since we would need to move both hands to the same hold
+        else:
+            beta = move_to_match_on_final_hold(problem['end'][0], beta)
+
+        betas[key] = beta
 
     return betas
 
