@@ -8,3 +8,4 @@ with open('data/hold_positions.json') as hold_file, open('data/moonboard_problem
 
 run_cnn(*preprocess_cnn(problems))
 run_lstm(*preprocess_lstm(problems, hold_positions))
+run_lstm(*preprocess_lstm(problems, hold_positions, random_beta=True))
