@@ -80,17 +80,19 @@ def calculate_hold_difficulty(problems):
         # At the moment, the weight for each grade is 1. Past experiments with different weights have not boosted performacne
         hold_freq[hold] = np.multiply(hold_freq[hold], freq_weight)
 
-        # Threshold is set to be the median frequency for that hold
+        # Threshold is set to be half the sum of all frequencies
         threshold = np.sum(hold_freq[hold]) / 2
 
-        # TODO: Comment this section properly
+        # Calculates a hold difficulty value in the range [0, 1]
+        # Based on the median grade but also adds an extra value based on how much the frequency for the median grade
+        # pushes the current sum beyond the threshold value.
         curr_sum = 0.0
+
         for i, freq in enumerate(hold_freq[hold]):
             curr_sum += freq
 
             if curr_sum >= threshold:
-                hold_avg_grade[hold] = (
-                    float(i) + 1-((curr_sum - threshold)/freq))/17
+                hold_avg_grade[hold] = (float(i) + 1-((curr_sum - threshold)/freq))/17
                 break
 
     return hold_avg_grade

@@ -8,8 +8,8 @@ wandb_mode = None
 
 # List of all model types which will be run on program execution
 active_models = [
-    # "LSTM",
-    # "LSTM_RANDOM",
+    "LSTM",
+    "LSTM_RANDOM",
     "CNN"
 ]
 
