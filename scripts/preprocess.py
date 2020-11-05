@@ -1,4 +1,4 @@
-from . import constants, log
+from . import constants
 import numpy as np
 from numpy.random import shuffle
 import pandas as pd
