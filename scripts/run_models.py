@@ -3,6 +3,7 @@ import numpy as np
 import keras
 import random
 from . import constants, metrics, log
+from .preprocess import *
 from numpy.random import seed
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Conv2D, Flatten, Input, concatenate
@@ -41,7 +42,18 @@ def convert_ordinal_prob_to_grade(pred):
     return reverse_ordinal_encoding(converted)
 
 
-def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
+def run(problems, hold_positions, model_type):
+    if model_type == "CNN":
+        run_cnn(problems)
+    elif model_type == "LSTM" or model_type == "LSTM_RANDOM":
+        run_lstm(problems, hold_positions, model_type)
+
+
+def run_lstm(problems, hold_positions, model_type):
+    log.log_output(model_type, "Begin preprocessing for " + model_type)
+    x_train, y_train, x_val, y_val, x_test, y_test = preprocess_lstm(problems, hold_positions, random_beta=model_type=="LSTM_RANDOM")
+    log.log_output(model_type, "Completed preprocessing for " + model_type)
+
     if constants.wandb_mode == "LSTM":
         hyperparameters = config
         callbacks = [WandbCallback()]
@@ -58,19 +70,23 @@ def run_lstm(x_train, y_train, x_val, y_val, x_test, y_test):
     model.add(Dense(10, activation='sigmoid'))
     model.compile(loss='mse', optimizer='adam', metrics=['mae'])
 
-    log.log_output("LSTM", "Begin LSTM Training")
+    log.log_output(model_type, "Begin " + model_type + " Training")
 
     history = model.fit(x_train, y_train, epochs=hyperparameters['epochs'], batch_size=hyperparameters['batch_size'], validation_data=(
         x_val, y_val), verbose=1, callbacks=callbacks)
 
-    log.log_output("LSTM", "Completed LSTM Training")
+    log.log_output(model_type, "Completed " + model_type + " Training")
 
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
 
-    log.log_output("LSTM", "Scores for LSTM on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))
+    log.log_output(model_type, "Scores for " + model_type + " on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))
 
 
-def run_cnn(x_train, y_train, x_val, y_val, x_test, y_test):
+def run_cnn(problems):
+    log.log_output("CNN", "Begin preprocessing for CNN")
+    x_train, y_train, x_val, y_val, x_test, y_test = preprocess_cnn(problems)
+    log.log_output("CNN", "Completed preprocessing for CNN")
+
     if constants.wandb_mode == "CNN":
         callbacks = [WandbCallback()]
     else:

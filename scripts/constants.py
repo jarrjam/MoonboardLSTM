@@ -6,6 +6,13 @@ max_moves = 16
 # LSTM: LSTM logging
 wandb_mode = None
 
+# List of all model types which will be run on program execution
+active_models = [
+    # "LSTM",
+    # "LSTM_RANDOM",
+    "CNN"
+]
+
 # Mappings for each of the grading systems
 grade_map = {
     2: {'font_scale': '6B', 'v_scale': 4},

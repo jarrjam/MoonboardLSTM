@@ -425,8 +425,6 @@ def format_problems(problems):
 
 # Preprocessing steps for LSTM approach
 def preprocess_lstm(problems, hold_positions, random_beta=False):
-    log.log_output("LSTM", "Begin preprocessing for LSTM")
-
     problems = copy.deepcopy(problems)
     problems = format_problems(problems)
     betas = generate_betas(problems, random_beta=random_beta)
@@ -439,8 +437,6 @@ def preprocess_lstm(problems, hold_positions, random_beta=False):
     dataset_scaled = scale_values(dataset)
     dataset_padded = pad_dataset(dataset_scaled)
     dataset_pd = pd.DataFrame(dataset_padded, columns=['id', 'moves', 'grade'])
-
-    log.log_output("LSTM", "Completed preprocessing for LSTM")
 
     return upsample_and_split(dataset_pd, x_col_name='moves')
 
@@ -473,13 +469,11 @@ def get_grades(problems):
 
 
 def preprocess_cnn(problems):
-    log.log_output("CNN", "Begin preprocessing for CNN")
     hold_map = problems_to_hold_map(problems)
     problem_ids = [key for key in problems]
     grades = get_grades(problems)
 
     problem_dict = {'ids': problem_ids, 'hold_map': hold_map, 'grade': grades}
     dataset = pd.DataFrame(problem_dict)
-    log.log_output("CNN", "Completed preprocessing for CNN")
 
     return upsample_and_split(dataset, x_col_name='hold_map')
