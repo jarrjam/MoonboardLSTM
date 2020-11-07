@@ -10,17 +10,6 @@ from keras.layers import Dense, LSTM, Conv2D, Flatten, Input, concatenate
 import tensorflow as tf
 from tensorflow.random import set_seed
 
-if constants.wandb_mode != None:
-    import wandb
-    from wandb.keras import WandbCallback
-
-if constants.wandb_mode == "LSTM":
-    wandb.init(config=constants.hyperparameters_lstm,
-               project="moonboard_rnn", group="LSTM_original")
-    config = wandb.config
-elif constants.wandb_mode == "CNN":
-    wandb.init(project="moonboard_rnn", group="CNN")
-
 
 # Used to make experiments as reproduceable as possible
 def reset_seed():
@@ -53,12 +42,7 @@ def run_lstm(problems, hold_positions, model_type):
     x_train, y_train, x_val, y_val, x_test, y_test = preprocess_lstm(problems, hold_positions, random_beta=model_type=="LSTM_RANDOM")
     log.log_output(model_type, "Completed preprocessing for " + model_type)
 
-    if constants.wandb_mode == "LSTM":
-        hyperparameters = config
-        callbacks = [WandbCallback()]
-    else:
-        hyperparameters = constants.hyperparameters_lstm
-        callbacks = []
+    hyperparameters = constants.hyperparameters_lstm
 
     reset_seed()
 
@@ -72,7 +56,7 @@ def run_lstm(problems, hold_positions, model_type):
     log.log_output(model_type, "Begin " + model_type + " Training")
 
     history = model.fit(x_train, y_train, epochs=hyperparameters['epochs'], batch_size=hyperparameters['batch_size'], validation_data=(
-        x_val, y_val), verbose=1, callbacks=callbacks)
+        x_val, y_val), verbose=1)
 
     log.log_output(model_type, "Completed " + model_type + " Training")
 
@@ -85,11 +69,6 @@ def run_cnn(problems):
     log.log_output("CNN", "Begin preprocessing for CNN")
     x_train, y_train, x_val, y_val, x_test, y_test = preprocess_cnn(problems)
     log.log_output("CNN", "Completed preprocessing for CNN")
-
-    if constants.wandb_mode == "CNN":
-        callbacks = [WandbCallback()]
-    else:
-        callbacks = []
 
     reset_seed()
 
@@ -109,7 +88,7 @@ def run_cnn(problems):
     log.log_output("CNN", "Begin CNN Training")
 
     history = model.fit(x_train, y_train, epochs=40, batch_size=64,
-                        validation_data=(x_val, y_val), verbose=1, callbacks=callbacks)
+                        validation_data=(x_val, y_val), verbose=1)
 
     log.log_output("CNN", "Completed CNN Training")
 

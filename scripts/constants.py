@@ -1,11 +1,6 @@
 # Max number of moves for a generated beta/move sequence
 max_moves = 16
 
-# None: no WandB logging
-# CNN: CNN logging
-# LSTM: LSTM logging
-wandb_mode = None
-
 # List of all model types which will be run on program execution
 active_models = [
     "LSTM",
