@@ -26,13 +26,6 @@ grade_map = {
     15: {'font_scale': '8B+', 'v_scale': 14}
 }
 
-# hyperparameters_lstm = dict(
-#     epochs = 183,
-#     batch_size = 16,
-#     nodes_1 = 46,
-#     nodes_2 = 20,
-# )
-
 hyperparameters_lstm = dict(
     epochs = 58,
     batch_size = 157,

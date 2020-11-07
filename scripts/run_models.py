@@ -32,9 +32,9 @@ def convert_ordinal_prob_to_grade(pred):
 
 def run(problems, hold_positions, model_type):
     if model_type == "CNN":
-        run_cnn(problems)
+        return run_cnn(problems)
     elif model_type == "LSTM" or model_type == "LSTM_RANDOM":
-        run_lstm(problems, hold_positions, model_type)
+        return run_lstm(problems, hold_positions, model_type)
 
 
 def run_lstm(problems, hold_positions, model_type):
@@ -61,8 +61,11 @@ def run_lstm(problems, hold_positions, model_type):
     log.log_output(model_type, "Completed " + model_type + " Training")
 
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
+    table, mse = metrics.ordinal_evaluation_report(y_test, pred, return_mse=True)
 
-    log.log_output(model_type, "Scores for " + model_type + " on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))
+    log.log_output(model_type, "Scores for " + model_type + " on test dataset:\n\n" + table)
+
+    return mse
 
 
 def run_cnn(problems):
@@ -93,5 +96,8 @@ def run_cnn(problems):
     log.log_output("CNN", "Completed CNN Training")
 
     pred = convert_ordinal_prob_to_grade(model.predict(x_test))
+    table, mse = metrics.ordinal_evaluation_report(y_test, pred, return_mse=True)
 
-    log.log_output("CNN", "Scores for CNN on test dataset:\n\n" + metrics.ordinal_evaluation_report(y_test, pred))
+    log.log_output("CNN", "Scores for CNN on test dataset:\n\n" + table)
+
+    return mse

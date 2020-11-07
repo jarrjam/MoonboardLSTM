@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from .constants import active_models
 
 
 # Macro-averaged MSE used for ordinal regression when there is imbalanced classes
@@ -23,7 +24,7 @@ def macro_mse(y_true, y_pred):
 
 
 # Generates a report containing MSE and MAE scores for each climbing grade
-def ordinal_evaluation_report(y_true, y_pred, labels=None):
+def ordinal_evaluation_report(y_true, y_pred, labels=None, return_mse=False):
     if isinstance(y_true, pd.Series):
         y_true = y_true.to_numpy()
 
@@ -70,6 +71,9 @@ def ordinal_evaluation_report(y_true, y_pred, labels=None):
                 subset_mse += mse
                 subset_mae += mae
 
+    class_scores['subset'] = subset_mse/len(subset_grades)
+    class_scores['total'] = total_mse/len(unique)
+
     headers = ['Grade', 'MSE', 'MAE', 'Support']
     data = [headers] + \
         list(zip(labels, ["{0:.5g}".format(class_scores[label]['mse'])
@@ -85,13 +89,40 @@ def ordinal_evaluation_report(y_true, y_pred, labels=None):
             output_string += '-' * len(line) + '\n'
 
     output_string += '|'.join(str(item).ljust(8) for item in ['Subset', "{0:.5g}".format(
-        subset_mse/len(subset_grades)), "{0:.5g}".format(subset_mae/len(subset_grades)), subset_support])
+        class_scores['subset']), "{0:.5g}".format(subset_mae/len(subset_grades)), subset_support])
     output_string += '\n'
 
-    output_string += '|'.join(str(item).ljust(8) for item in ['Total', "{0:.5g}".format(total_mse/len(
-        unique)), "{0:.5g}".format(total_mae/len(unique)), len(y_true)])
+    output_string += '|'.join(str(item).ljust(8) for item in ['Total', "{0:.5g}".format(class_scores['total']), 
+        "{0:.5g}".format(total_mae/len(unique)), len(y_true)])
     output_string += '\n'
 
     output_string += '\nSubset scores are based on grades with at least 30 samples in the test dataset.\n'
 
+    if return_mse:
+        return output_string, class_scores
+    else:
+        return output_string
+
+
+def final_results_table(results):
+    headers = ["Grade"] + active_models
+    header_row = '|'.join(str(x).ljust(12) for x in headers)
+    
+    output_string = header_row + '\n'
+    output_string += '-' * len(header_row) + '\n'
+
+    for i in range(4, 15):
+        line = '|'.join(str(x).ljust(12) for x in [str(i)] 
+            + ["{0:.5g}".format(results[j][i]['mse']) for j in range(len(active_models))])
+        output_string += line + '\n'
+
+    output_string += '-' * len(header_row) + '\n'
+    
+    output_string += '|'.join(str(x).ljust(12) for x in ["Subset"] 
+        + ["{0:.5g}".format(results[i]['subset']) for i in range(len(active_models))]) + '\n'
+    output_string += '|'.join(str(x).ljust(12) for x in ["Total"] 
+        + ["{0:.5g}".format(results[i]['total']) for i in range(len(active_models))]) + '\n'
+
+    output_string += '\nSubset scores are based on grades with at least 30 samples in the test dataset.\n'
+    
     return output_string
